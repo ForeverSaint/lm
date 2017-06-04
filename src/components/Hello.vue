@@ -25,7 +25,7 @@
     </div>
   <!--表格-->
   <div class="table">
-     <el-table :data="tableData" style="width: 100%"  border stripe height="250">
+     <el-table :data="tableData" style="width: 100%"  border stripe height="250" highlight-current-row  @current-change="handleCurrentChange">
       <el-table-column prop="name"  label="现有控制方案名称" width="180" align="center"></el-table-column>
       <el-table-column prop="createTime"  label="创建时间" width="180" align="center"></el-table-column>
       <el-table-column prop="createUser" label="创建人" align="center"></el-table-column>
@@ -151,6 +151,8 @@ import tab_one from '@/components/tab/tab_one'
 import tab_two from '@/components/tab/tab_two'
 import addModel from '@/components/addModel/addModel'
 import ElCol from "element-ui/packages/col/src/col";
+import { timeFormater } from 'tools';
+//import fetch from 'fetch';
 
 const cityOptions = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
 const WeekDays = ['星期一','星期二','星期三','星期四','星期五','星期六','星期日'];
@@ -189,37 +191,7 @@ export default {
         date:''
       },
       status:true,
-      tableData: [{
-            createTime: '2016-05-02',
-            name: 'KZ-AAAA',
-            createUser: 'BOSS',
-            description:'ONLY FOR TEST'
-          },{
-            createTime: '2016-05-02',
-            name: 'KZ-AAAA',
-            createUser: 'BOSS',
-            description:'ONLY FOR TEST'
-          }, {
-            createTime: '2016-05-02',
-            name: 'KZ-AAAA',
-            createUser: 'BOSS',
-            description:'ONLY FOR TEST'
-          }, {
-            createTime: '2016-05-02',
-            name: 'KZ-AAAA',
-            createUser: 'BOSS',
-            description:'ONLY FOR TEST'
-          },{
-            createTime: '2016-05-02',
-            name: 'KZ-AAAA',
-            createUser: 'BOSS',
-            description:'ONLY FOR TEST'
-          },{
-            createTime: '2016-05-02',
-            name: 'KZ-AAAA',
-            createUser: 'BOSS',
-            description:'ONLY FOR TEST'
-          }],
+      tableData: [],
       checkedCities: ['01', '02'],
       checkedWeekDays: ['星期一','星期二'],
       WeekDays: WeekDays,
@@ -246,30 +218,74 @@ export default {
       dialogFormVisible:false
     }
   },
+  created() {
+    this.init();
+  },
   methods: {
     //提交表单方法
     onSubmit() {
       console.log(this.formInline);
     },
-
+    //初始化数据
+    init() {
+        //返回的promise必须使用箭头函数
+      this.$ajax('/aoc/flightPlanDist/flightPlanDistRule/ls')
+        .then(response => {
+          console.log(response);
+          this.loadTableData(response.data.body.rows);
+        })
+        .catch(response => {
+          console.log(response);
+        });
+    },
+    //表格数据整理
+     loadTableData(data) {
+       if(this.tableData.length !== 0) this.tableData.length === 0 ;
+       if(!data) return true;
+        let key = ['createTime','createUser','description','name'];
+        let tableData = [];
+        for(let i of data) {
+          tableData.push({
+             createTime: i.createTime === undefined ? '' : timeFormater(i.createTime,'yyyy-MM-dd hh:mm:ss') ,
+             createUser: i.createUser === undefined ? '' : i.createUser ,
+             description: i.description === undefined ? '' : i.description ,
+             name: i.name === undefined ? '' : i.name
+           })
+        }
+       this.tableData = tableData;
+        console.log(this.tableData.length);
+     },
+    //表格单选时间
+    handleCurrentChange(val) {
+        console.log(val);
+    },
+    //编辑操作
     handleEdit(index, row) {
         console.log(index, row);
     },
+    //删除操作
     handleDelete(index, row) {
         console.log(index, row);
     },
+    //
     handleCheckedCitiesChange(value) {
         let checkedCount = value.length;
         this.checkAll = checkedCount === this.cities.length;
         this.isIndeterminate = checkedCount > 0 && checkedCount < this.cities.length;
       },
+    //动态组件切换方法
     toggle(i,v) {
         this.active = i;
         this.currentView = v;
     },
+    //弹窗关闭操作,可执行异步关闭
     close() {
-        this.dialogFormVisible = false;
+        setTimeout(() => {
+            //..设置loading和其他操作，延时为示例
+          this.dialogFormVisible = false;
+        },1000)
     },
+    //弹框确认操作，可执行异步关闭
     confirm() {
         this.dialogFormVisible = false;
     }
